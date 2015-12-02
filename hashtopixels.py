@@ -9,6 +9,9 @@ range = xrange
 def factors(n):
 	"Yield every pair of factors of n (x,y where n/x == y and n/y == x), except for (1,n) and (n,1)."
 	limit = math.sqrt(n).real
+	if n == 1:
+		yield (1, 1)
+		return
 	for i in range(1, int(limit + 1)):
 		if n % i == 0:
 			pair = (i, n/i)
@@ -37,13 +40,39 @@ def hash_to_pic(hash):
 	def bgcolor(idx):
 		return '\x1b[48;5;{0}m'.format(idx)
 	reset = '\x1b[0m'
+	characters = [
+		'▚',
+		'▞',
+		'▀',
+		'▌',
+	]
 	pairs = list((w, h) for (w, h) in except_one(factors(len(hash) / 2)) if h <= 64 and w < 80)
+	if not pairs:
+		# Prefer (w, 1) over (1, h) if we have that choice.
+		pairs = list((w, h) for (w, h) in factors(len(hash) / 2) if w != 1)
+		if not pairs:
+			# 1×1 by this point.
+			pairs = list((w, h) for (w, h) in factors(len(hash) / 2))
 
 	output_chunks = []
 	last_byte = 0
+	fg = None
+	character_idx = None
 	for b in bytes:
-		output_chunks.append(bgcolor(b) + '  ')
+		if fg is None:
+			fg = b
+		else:
+			bg = b
+			character_idx = b % len(characters)
+			output_chunks.append(fgcolor(fg) + bgcolor(b) + characters[character_idx])
+			fg = bg = character_idx = None
 		last_byte = b
+	else:
+		if fg is not None:
+			character_idx = fg % len(characters)
+			# Assume/hope that ROT128(fg) will produce a complementary color.
+			output_chunks.append(fgcolor(fg) + bgcolor((fg + 0x80) % 0x100) + characters[character_idx])
+
 	pixels_per_row, num_rows = pairs[last_byte % len(pairs)]
 	while output_chunks:
 		yield ''.join(output_chunks[:pixels_per_row]) + reset

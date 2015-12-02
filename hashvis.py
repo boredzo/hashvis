@@ -29,8 +29,9 @@ def except_one(pairs):
 			yield pair
 
 def parse_hex(hex):
+	hex = hex.lstrip(':')
 	while hex:
-		byte_hex, hex = hex[:2], hex[2:]
+		byte_hex, hex = hex[:2], hex[2:].lstrip(':')
 		yield int(byte_hex, 16)
 
 def hash_to_pic(hash):
@@ -90,6 +91,7 @@ if run_tests:
 	assert factors_of_5 == set([(1, 5), (5, 1)])
 
 	assert list(parse_hex('ab15e')) == [0xab, 0x15, 0x0e]
+	assert list(parse_hex(':::ab:15:e')) == [0xab, 0x15, 0x0e]
 
 	sys.exit(0)
 

@@ -98,6 +98,6 @@ import fileinput
 for input_line in fileinput.input():
 	hash, other_stuff_including_probably_a_filename = input_line.split(None, 1)
 
-	print other_stuff_including_probably_a_filename.rstrip('\n')
+	print input_line.rstrip('\n')
 	for output_line in hash_to_pic(hash):
 		print output_line

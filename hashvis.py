@@ -36,9 +36,15 @@ def parse_hex(hex):
 def hash_to_pic(hash):
 	bytes = parse_hex(hash)
 	def fgcolor(idx):
-		return '\x1b[38;5;{0}m'.format(idx)
+		idx = ((idx >> 4) & 0xf)
+		# 90 is bright foreground; 30 is dull foreground.
+		base = 90 if idx > 0x7 else 30
+		return '\x1b[{0}m'.format(base + idx)
 	def bgcolor(idx):
-		return '\x1b[48;5;{0}m'.format(idx)
+		idx = (idx & 0xf)
+		# 100 is bright background; 40 is dull background.
+		base = 100 if idx > 0x7 else 40
+		return '\x1b[{0}m'.format(base + idx)
 	reset = '\x1b[0m'
 	characters = [
 		'▚',
@@ -53,22 +59,11 @@ def hash_to_pic(hash):
 
 	output_chunks = []
 	last_byte = 0
-	fg = None
 	character_idx = None
 	for b in bytes:
-		if fg is None:
-			fg = b
-		else:
-			bg = b
-			character_idx = b % len(characters)
-			output_chunks.append(fgcolor(fg) + bgcolor(b) + characters[character_idx])
-			fg = bg = character_idx = None
+		character_idx = b % len(characters)
+		output_chunks.append(fgcolor(b) + bgcolor(b) + characters[character_idx])
 		last_byte = b
-	else:
-		if fg is not None:
-			character_idx = fg % len(characters)
-			# Assume/hope that ROT128(fg) will produce a complementary color.
-			output_chunks.append(fgcolor(fg) + bgcolor((fg + 0x80) % 0x100) + characters[character_idx])
 
 	pixels_per_row, num_rows = pairs[last_byte % len(pairs)]
 	while output_chunks:

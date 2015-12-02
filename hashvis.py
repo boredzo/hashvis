@@ -46,13 +46,10 @@ def hash_to_pic(hash):
 		'▀',
 		'▌',
 	]
-	pairs = list((w, h) for (w, h) in except_one(factors(len(hash) / 2)) if h <= 64 and w < 80)
+	pairs = list((w, h) for (w, h) in except_one(factors(len(hash) / 2)) if w >= h)
 	if not pairs:
 		# Prefer (w, 1) over (1, h) if we have that choice.
-		pairs = list((w, h) for (w, h) in factors(len(hash) / 2) if w != 1)
-		if not pairs:
-			# 1×1 by this point.
-			pairs = list((w, h) for (w, h) in factors(len(hash) / 2))
+		pairs = list((w, h) for (w, h) in factors(len(hash) / 2) if w >= h)
 
 	output_chunks = []
 	last_byte = 0

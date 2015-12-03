@@ -30,7 +30,7 @@ def except_one(pairs):
 			yield pair
 
 MD5_exp = re.compile(r'^MD5 \(.*\) = ([0-9a-fA-f]+)')
-RSA_exp = re.compile(r'^RSA key fingerprint is ([:0-9a-fA-f]+)\.')
+RSA_exp = re.compile(r'^RSA key fingerprint is (?:MD5:)?([:0-9a-fA-f]+)\.')
 def extract_hash_from_line(input_line):
 	if input_line[:1] == 'M':
 		match = MD5_exp.match(input_line)
@@ -126,6 +126,9 @@ if run_tests:
 
 	assert extract_hash_from_line('RSA key fingerprint is b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38.\n') == 'b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38'
 	assert extract_hash_from_line('RSA key fingerprint is b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38.') == 'b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38'
+	#Alternate output example from https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Authentication_Keys :
+	assert extract_hash_from_line('RSA key fingerprint is MD5:10:4a:ec:d2:f1:38:f7:ea:0a:a0:0f:17:57:ea:a6:16.') == '10:4a:ec:d2:f1:38:f7:ea:0a:a0:0f:17:57:ea:a6:16'
+
 	assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49\n') == 'e21c7b846f76826d52a0ade79ef9cb49'
 	assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49') == 'e21c7b846f76826d52a0ade79ef9cb49'
 	assert extract_hash_from_line('8b948e9c85fdf68f872017d7064e839c  hashvis.py\n') == '8b948e9c85fdf68f872017d7064e839c'

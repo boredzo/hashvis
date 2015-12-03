@@ -28,6 +28,21 @@ def except_one(pairs):
 		if 1 not in pair:
 			yield pair
 
+def extract_hash_from_line(input_line):
+		try:
+			hash, not_the_hash = input_line.split(None, 1)
+		except ValueError:
+			# Insufficient fields. This line doesn't contain any whitespace. Use the entire line.
+			hash = input_line
+
+		try:
+			int(hash, 16)
+		except ValueError:
+			# Not a hex number.
+			return None
+		else:
+			return hash
+
 def parse_hex(hex):
 	hex = hex.lstrip(':')
 	while hex:
@@ -93,13 +108,20 @@ if run_tests:
 	assert list(parse_hex('ab15e')) == [0xab, 0x15, 0x0e]
 	assert list(parse_hex(':::ab:15:e')) == [0xab, 0x15, 0x0e]
 
+	assert extract_hash_from_line('8b948e9c85fdf68f872017d7064e839c  hashvis.py\n') == '8b948e9c85fdf68f872017d7064e839c'
+	assert extract_hash_from_line('8b948e9c85fdf68f872017d7064e839c  hashvis.py') == '8b948e9c85fdf68f872017d7064e839c'
+	assert extract_hash_from_line('2c9997ce32cb35823b2772912e221b350717fcb2d782c667b8f808be44ae77ba1a7b94b4111e386c64a2e87d15c64a2fc2177cd826b9a0fba6b348b4352ed924  hashvis.py\n') == '2c9997ce32cb35823b2772912e221b350717fcb2d782c667b8f808be44ae77ba1a7b94b4111e386c64a2e87d15c64a2fc2177cd826b9a0fba6b348b4352ed924'
+	assert extract_hash_from_line('2c9997ce32cb35823b2772912e221b350717fcb2d782c667b8f808be44ae77ba1a7b94b4111e386c64a2e87d15c64a2fc2177cd826b9a0fba6b348b4352ed924  hashvis.py') == '2c9997ce32cb35823b2772912e221b350717fcb2d782c667b8f808be44ae77ba1a7b94b4111e386c64a2e87d15c64a2fc2177cd826b9a0fba6b348b4352ed924'
+	assert extract_hash_from_line('#!/usr/bin/python\n') is None
+
 	sys.exit(0)
 
 import fileinput
 
 for input_line in fileinput.input():
-	hash, other_stuff_including_probably_a_filename = input_line.split(None, 1)
-
 	print input_line.rstrip('\n')
-	for output_line in hash_to_pic(hash):
-		print output_line
+
+	hash = extract_hash_from_line(input_line)
+	if hash:
+		for output_line in hash_to_pic(hash):
+			print output_line

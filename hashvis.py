@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import re
 
 import cmath as math
 range = xrange
@@ -28,7 +29,15 @@ def except_one(pairs):
 		if 1 not in pair:
 			yield pair
 
+MD5_exp = re.compile(r'^MD5 \(.*\) = ([0-9a-fA-f]+)')
 def extract_hash_from_line(input_line):
+	if input_line[:1] == 'M':
+		match = MD5_exp.match(input_line)
+		if match:
+			return match.group(1)
+		else:
+			return ''
+	else:
 		try:
 			hash, not_the_hash = input_line.split(None, 1)
 		except ValueError:
@@ -108,6 +117,8 @@ if run_tests:
 	assert list(parse_hex('ab15e')) == [0xab, 0x15, 0x0e]
 	assert list(parse_hex(':::ab:15:e')) == [0xab, 0x15, 0x0e]
 
+	assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49\n') == 'e21c7b846f76826d52a0ade79ef9cb49'
+	assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49') == 'e21c7b846f76826d52a0ade79ef9cb49'
 	assert extract_hash_from_line('8b948e9c85fdf68f872017d7064e839c  hashvis.py\n') == '8b948e9c85fdf68f872017d7064e839c'
 	assert extract_hash_from_line('8b948e9c85fdf68f872017d7064e839c  hashvis.py') == '8b948e9c85fdf68f872017d7064e839c'
 	assert extract_hash_from_line('2c9997ce32cb35823b2772912e221b350717fcb2d782c667b8f808be44ae77ba1a7b94b4111e386c64a2e87d15c64a2fc2177cd826b9a0fba6b348b4352ed924  hashvis.py\n') == '2c9997ce32cb35823b2772912e221b350717fcb2d782c667b8f808be44ae77ba1a7b94b4111e386c64a2e87d15c64a2fc2177cd826b9a0fba6b348b4352ed924'

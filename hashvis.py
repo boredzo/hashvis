@@ -3,6 +3,8 @@
 
 import sys
 import re
+import base64
+import binascii
 
 import cmath as math
 range = xrange
@@ -31,6 +33,9 @@ def except_one(pairs):
 
 MD5_exp = re.compile(r'^MD5 \(.*\) = ([0-9a-fA-f]+)')
 RSA_exp = re.compile(r'^RSA key fingerprint is (?:MD5:)?([:0-9a-fA-f]+)\.')
+ECDSA_exp = re.compile(r'^ECDSA key fingerprint is SHA256:([+/0-9a-zA-Z]+)\.')
+more_base64_padding_than_anybody_should_ever_need = '=' * 64
+
 def extract_hash_from_line(input_line):
 	if input_line[:1] == 'M':
 		match = MD5_exp.match(input_line)
@@ -42,6 +47,16 @@ def extract_hash_from_line(input_line):
 		match = RSA_exp.match(input_line)
 		if match:
 			return match.group(1)
+		else:
+			return ''
+	elif input_line[:1] == 'E':
+		match = ECDSA_exp.match(input_line)
+		if match:
+			b64str = match.group(1)
+			# Pacify the base64 module, which wants *some* padding (at least sometimes) but doesn't care how much.
+			b64str += more_base64_padding_than_anybody_should_ever_need
+			# Re-encode to hex for processing downstream. Arguably a refactoring opportunity…
+			return binascii.b2a_hex(base64.b64decode(b64str))
 		else:
 			return ''
 	else:
@@ -128,6 +143,9 @@ if run_tests:
 	assert extract_hash_from_line('RSA key fingerprint is b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38.') == 'b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38'
 	#Alternate output example from https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Authentication_Keys :
 	assert extract_hash_from_line('RSA key fingerprint is MD5:10:4a:ec:d2:f1:38:f7:ea:0a:a0:0f:17:57:ea:a6:16.') == '10:4a:ec:d2:f1:38:f7:ea:0a:a0:0f:17:57:ea:a6:16'
+	# Also from https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Authentication_Keys :
+	assert extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.\n') == '2cf162318aeb098415b1550fce3387bfe663cb10879556093015457ab5423fb9', extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.\n')
+	assert extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.') == '2cf162318aeb098415b1550fce3387bfe663cb10879556093015457ab5423fb9', extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.')
 
 	assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49\n') == 'e21c7b846f76826d52a0ade79ef9cb49'
 	assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49') == 'e21c7b846f76826d52a0ade79ef9cb49'

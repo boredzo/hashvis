@@ -90,7 +90,11 @@ def hash_to_pic(hash):
 	def bgcolor(idx):
 		idx = (idx & 0xf)
 		# 100 is bright background; 40 is dull background.
-		base = 100 if idx > 0x7 else 40
+		if idx < 0x8:
+			base = 40
+		else:
+			base = 100
+			idx = idx - 0x8
 		return '\x1b[{0}m'.format(base + idx)
 	reset = '\x1b[0m'
 	characters = [
@@ -156,6 +160,10 @@ if __name__ == '__main__':
 		assert extract_hash_from_line('2c9997ce32cb35823b2772912e221b350717fcb2d782c667b8f808be44ae77ba1a7b94b4111e386c64a2e87d15c64a2fc2177cd826b9a0fba6b348b4352ed924  hashvis.py') == '2c9997ce32cb35823b2772912e221b350717fcb2d782c667b8f808be44ae77ba1a7b94b4111e386c64a2e87d15c64a2fc2177cd826b9a0fba6b348b4352ed924'
 		assert extract_hash_from_line('#!/usr/bin/python\n') is None
 
+		(line,) = hash_to_pic('78')
+		assert line == '\x1b[37m\x1b[100m\xe2\x96\x9a\x1b[0m', repr(line)
+		(line,) = hash_to_pic('7f')
+		assert line == '\x1b[37m\x1b[107m\xe2\x96\x8c\x1b[0m', repr(line)
 		sys.exit(0)
 
 	import fileinput

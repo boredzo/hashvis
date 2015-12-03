@@ -30,9 +30,16 @@ def except_one(pairs):
 			yield pair
 
 MD5_exp = re.compile(r'^MD5 \(.*\) = ([0-9a-fA-f]+)')
+RSA_exp = re.compile(r'^RSA key fingerprint is ([:0-9a-fA-f]+)\.')
 def extract_hash_from_line(input_line):
 	if input_line[:1] == 'M':
 		match = MD5_exp.match(input_line)
+		if match:
+			return match.group(1)
+		else:
+			return ''
+	elif input_line[:1] == 'R':
+		match = RSA_exp.match(input_line)
 		if match:
 			return match.group(1)
 		else:
@@ -117,6 +124,8 @@ if run_tests:
 	assert list(parse_hex('ab15e')) == [0xab, 0x15, 0x0e]
 	assert list(parse_hex(':::ab:15:e')) == [0xab, 0x15, 0x0e]
 
+	assert extract_hash_from_line('RSA key fingerprint is b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38.\n') == 'b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38'
+	assert extract_hash_from_line('RSA key fingerprint is b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38.') == 'b8:79:03:7d:00:44:98:6e:67:a0:59:1a:01:21:36:38'
 	assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49\n') == 'e21c7b846f76826d52a0ade79ef9cb49'
 	assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49') == 'e21c7b846f76826d52a0ade79ef9cb49'
 	assert extract_hash_from_line('8b948e9c85fdf68f872017d7064e839c  hashvis.py\n') == '8b948e9c85fdf68f872017d7064e839c'

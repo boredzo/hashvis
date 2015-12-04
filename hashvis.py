@@ -57,15 +57,14 @@ def extract_hash_from_line(input_line):
 			b64str += more_base64_padding_than_anybody_should_ever_need
 			# Re-encode to hex for processing downstream. Arguably a refactoring opportunity…
 			return binascii.b2a_hex(base64.b64decode(b64str))
-		else:
-			return ''
-	else:
+
+	if input_line:
 		try:
 			hash, not_the_hash = input_line.split(None, 1)
 		except ValueError:
 			# Insufficient fields. This line doesn't contain any whitespace. Use the entire line.
 			hash = input_line
-		hash = hash.strip()
+		hash = hash.strip().replace('-', '')
 
 		try:
 			int(hash, 16)
@@ -76,9 +75,9 @@ def extract_hash_from_line(input_line):
 			return hash
 
 def parse_hex(hex):
-	hex = hex.lstrip(':')
+	hex = hex.lstrip(':-')
 	while hex:
-		byte_hex, hex = hex[:2], hex[2:].lstrip(':')
+		byte_hex, hex = hex[:2], hex[2:].lstrip(':-')
 		yield int(byte_hex, 16)
 
 def hash_to_pic(hash):
@@ -152,6 +151,9 @@ if __name__ == '__main__':
 		# Also from https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Authentication_Keys :
 		assert extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.\n') == '2cf162318aeb098415b1550fce3387bfe663cb10879556093015457ab5423fb9', extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.\n')
 		assert extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.') == '2cf162318aeb098415b1550fce3387bfe663cb10879556093015457ab5423fb9', extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.')
+		#UUID
+		assert extract_hash_from_line('E6CD379E-12CD-4E00-A83A-B06E74CF03B8') == 'E6CD379E12CD4E00A83AB06E74CF03B8', extract_hash_from_line('E6CD379E-12CD-4E00-A83A-B06E74CF03B8')
+		assert extract_hash_from_line('e6cd379e-12cd-4e00-a83a-b06e74cf03b8') == 'e6cd379e12cd4e00a83ab06e74cf03b8', extract_hash_from_line('e6cd379e-12cd-4e00-a83a-b06e74cf03b8')
 
 		assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49\n') == 'e21c7b846f76826d52a0ade79ef9cb49'
 		assert extract_hash_from_line('MD5 (hashvis.py) = e21c7b846f76826d52a0ade79ef9cb49') == 'e21c7b846f76826d52a0ade79ef9cb49'

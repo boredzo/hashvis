@@ -65,6 +65,7 @@ def extract_hash_from_line(input_line):
 		except ValueError:
 			# Insufficient fields. This line doesn't contain any whitespace. Use the entire line.
 			hash = input_line
+		hash = hash.strip()
 
 		try:
 			int(hash, 16)

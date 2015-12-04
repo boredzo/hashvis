@@ -85,7 +85,11 @@ def hash_to_pic(hash):
 	def fgcolor(idx):
 		idx = ((idx >> 4) & 0xf)
 		# 90 is bright foreground; 30 is dull foreground.
-		base = 90 if idx > 0x7 else 30
+		if idx < 0x8:
+			base = 30
+		else:
+			base = 90
+			idx = idx - 0x8
 		return '\x1b[{0}m'.format(base + idx)
 	def bgcolor(idx):
 		idx = (idx & 0xf)
@@ -167,6 +171,8 @@ if __name__ == '__main__':
 		assert line == '\x1b[37m\x1b[100m\xe2\x96\x9a\x1b[0m', repr(line)
 		(line,) = hash_to_pic('7f')
 		assert line == '\x1b[37m\x1b[107m\xe2\x96\x8c\x1b[0m', repr(line)
+		assert list(hash_to_pic('aebece')) != list(hash_to_pic('deeefe')), (list(hash_to_pic('aebece')), list(hash_to_pic('deeefe')))
+		assert list(hash_to_pic('eaebec')) != list(hash_to_pic('edeeef')), (list(hash_to_pic('eaebec')), list(hash_to_pic('edeeef')))
 		sys.exit(0)
 
 	import fileinput

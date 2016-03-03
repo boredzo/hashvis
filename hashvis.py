@@ -80,7 +80,7 @@ def parse_hex(hex):
 		byte_hex, hex = hex[:2], hex[2:].lstrip(':-')
 		yield int(byte_hex, 16)
 
-def hash_to_pic(hash):
+def hash_to_pic(hash, only_ever_one_line=False):
 	bytes = parse_hex(hash)
 	def fgcolor(idx):
 		idx = ((idx >> 4) & 0xf)
@@ -107,10 +107,11 @@ def hash_to_pic(hash):
 		'▀',
 		'▌',
 	]
-	pairs = list((w, h) for (w, h) in except_one(factors(len(hash) / 2)) if w >= h)
-	if not pairs:
-		# Prefer (w, 1) over (1, h) if we have that choice.
-		pairs = list((w, h) for (w, h) in factors(len(hash) / 2) if w >= h)
+	if not only_ever_one_line:
+		pairs = list((w, h) for (w, h) in except_one(factors(len(hash) / 2)) if w >= h)
+		if not pairs:
+			# Prefer (w, 1) over (1, h) if we have that choice.
+			pairs = list((w, h) for (w, h) in factors(len(hash) / 2) if w >= h)
 
 	output_chunks = []
 	last_byte = 0
@@ -120,7 +121,10 @@ def hash_to_pic(hash):
 		output_chunks.append(fgcolor(b) + bgcolor(b) + characters[character_idx])
 		last_byte = b
 
-	pixels_per_row, num_rows = pairs[last_byte % len(pairs)]
+	if only_ever_one_line:
+		pixels_per_row, num_rows = len(hash) / 2, 1
+	else:
+		pixels_per_row, num_rows = pairs[last_byte % len(pairs)]
 	while output_chunks:
 		yield ''.join(output_chunks[:pixels_per_row]) + reset
 		del output_chunks[:pixels_per_row]
@@ -175,12 +179,16 @@ if __name__ == '__main__':
 		assert list(hash_to_pic('eaebec')) != list(hash_to_pic('edeeef')), (list(hash_to_pic('eaebec')), list(hash_to_pic('edeeef')))
 		sys.exit(0)
 
-	import fileinput
+	import argparse
+	parser = argparse.ArgumentParser(description="Visualize hexadecimal input (hashes, UUIDs, etc.) as an arrangement of color blocks.")
+	parser.add_argument('--one-line', '--oneline', action='store_true', help="Unconditionally produce a rectangle 1 character tall. The default is to choose a pair of width and height based upon one of the bytes of the input.")
+	options, args = parser.parse_known_args()
 
-	for input_line in fileinput.input():
+	import fileinput
+	for input_line in fileinput.input(args):
 		print input_line.rstrip('\n')
 
 		hash = extract_hash_from_line(input_line)
 		if hash:
-			for output_line in hash_to_pic(hash):
+			for output_line in hash_to_pic(hash, only_ever_one_line=options.one_line):
 				print output_line

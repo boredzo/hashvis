@@ -1,6 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""hashvis by Peter Hosey
+
+Reads from standard input or files, and prints what it reads, along with colorized versions of any hashes or signatures found in each line.
+
+The goal here is visual comparability. You should be able to tell whether two hashes are the same at a glance, rather than having to closely compare digits (or, more probably, not bother and just assume the hashes match!).
+
+The more obvious of the two methods used is shaping the output: Each hash will be represented as a rectangle of an aspect ratio determined by the hash. You may thus end up with one that's tall and one that's wide, or one that's square (if the hash length is a square number) and one that isn't.
+
+If two hashes are the same shape (or if you passed --oneline), another difference is that each byte is represented by a different pair of foreground and background colors. You should thus be able to compare the color-patterns rather than having to look at individual digits.
+"""
+
 import sys
 import re
 import base64

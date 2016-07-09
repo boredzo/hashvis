@@ -12,6 +12,8 @@ The more obvious of the two methods used is shaping the output: Each hash will b
 If two hashes are the same shape (or if you passed --oneline), another difference is that each byte is represented by a different pair of foreground and background colors. You should thus be able to compare the color-patterns rather than having to look at individual digits.
 """
 
+# #mark - Imports and utilities
+
 import sys
 import os
 import re
@@ -42,6 +44,8 @@ def except_one(pairs):
 	for pair in pairs:
 		if 1 not in pair:
 			yield pair
+
+# #mark - Parsing
 
 MD5_exp = re.compile(r'^MD5 \(.*\) = ([0-9a-fA-F]+)')
 fingerprint_exp = re.compile(r'^(?:R|ECD)SA key fingerprint is (?:(?:MD5:)?(?P<hex>[:0-9a-fA-F]+)|SHA256:(?P<base64>[+/0-9a-zA-Z]+))\.')
@@ -95,6 +99,8 @@ def parse_hex(hex):
 	while hex:
 		byte_hex, hex = hex[:2], hex[2:].lstrip(':-')
 		yield int(byte_hex, 16)
+
+# #mark - Representation
 
 def fgcolor(idx, deep_color=False):
 	if deep_color:
@@ -166,6 +172,9 @@ def hash_to_pic(hash, only_ever_one_line=False, represent_as_hex=False, deep_col
 		del output_chunks[:pixels_per_row]
 
 if __name__ == '__main__':
+
+# #mark - Self-tests
+
 	run_tests = False
 	if run_tests:
 		# A square number. Should contain a diagonal pair (in this case, (16,16)).
@@ -218,6 +227,8 @@ if __name__ == '__main__':
 		assert list(hash_to_pic('aebece', deep_color=False)) != list(hash_to_pic('deeefe', deep_color=False)), (list(hash_to_pic('aebece', deep_color=False)), list(hash_to_pic('deeefe', deep_color=False)))
 		assert list(hash_to_pic('eaebec', deep_color=False)) != list(hash_to_pic('edeeef', deep_color=False)), (list(hash_to_pic('eaebec', deep_color=False)), list(hash_to_pic('edeeef', deep_color=False)))
 		sys.exit(0)
+
+# #mark - Main
 
 	use_256color = os.getenv('TERM') == 'xterm-256color'
 

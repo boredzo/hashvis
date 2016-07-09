@@ -42,8 +42,8 @@ def except_one(pairs):
 		if 1 not in pair:
 			yield pair
 
-MD5_exp = re.compile(r'^MD5 \(.*\) = ([0-9a-fA-f]+)')
-fingerprint_exp = re.compile(r'^(?:R|ECD)SA key fingerprint is (?:(?:MD5:)?(?P<hex>[:0-9a-fA-f]+)|SHA256:(?P<base64>[+/0-9a-zA-Z]+))\.')
+MD5_exp = re.compile(r'^MD5 \(.*\) = ([0-9a-fA-F]+)')
+fingerprint_exp = re.compile(r'^(?:R|ECD)SA key fingerprint is (?:(?:MD5:)?(?P<hex>[:0-9a-fA-F]+)|SHA256:(?P<base64>[+/0-9a-zA-Z]+))\.')
 commit_exp = re.compile(r'^commit ([0-9a-fA-F]+)')
 more_base64_padding_than_anybody_should_ever_need = '=' * 64
 

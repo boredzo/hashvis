@@ -44,6 +44,7 @@ def except_one(pairs):
 
 MD5_exp = re.compile(r'^MD5 \(.*\) = ([0-9a-fA-f]+)')
 fingerprint_exp = re.compile(r'^(?:R|ECD)SA key fingerprint is (?:(?:MD5:)?(?P<hex>[:0-9a-fA-f]+)|SHA256:(?P<base64>[+/0-9a-zA-Z]+))\.')
+commit_exp = re.compile(r'^commit ([0-9a-fA-F]+)')
 more_base64_padding_than_anybody_should_ever_need = '=' * 64
 
 def extract_hash_from_line(input_line):
@@ -67,6 +68,10 @@ def extract_hash_from_line(input_line):
 				# Re-encode to hex for processing downstream. Arguably a refactoring opportunity…
 				return binascii.b2a_hex(base64.b64decode(b64str)), False
 			return '', False
+	elif input_line[:7] == 'commit ':
+		match = commit_exp.match(input_line)
+		if match:
+			return match.group(1), True
 
 	if input_line:
 		try:

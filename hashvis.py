@@ -13,6 +13,7 @@ If two hashes are the same shape (or if you passed --oneline), another differenc
 """
 
 import sys
+import os
 import re
 import base64
 import binascii
@@ -95,18 +96,24 @@ def parse_hex(hex):
 		byte_hex, hex = hex[:2], hex[2:].lstrip(':-')
 		yield int(byte_hex, 16)
 
-def hash_to_pic(hash, only_ever_one_line=False, represent_as_hex=False):
-	bytes = parse_hex(hash)
-	def fgcolor(idx):
-		idx = ((idx >> 4) & 0xf)
-		# 90 is bright foreground; 30 is dull foreground.
-		if idx < 0x8:
-			base = 30
-		else:
-			base = 90
-			idx = idx - 0x8
-		return '\x1b[{0}m'.format(base + idx)
-	def bgcolor(idx):
+def fgcolor(idx, deep_color=False):
+	if deep_color:
+		return '\x1b[38;5;{0}m'.format(idx)
+
+	idx = ((idx >> 4) & 0xf)
+	# 90 is bright foreground; 30 is dull foreground.
+	if idx < 0x8:
+		base = 30
+	else:
+		base = 90
+		idx = idx - 0x8
+	return '\x1b[{0}m'.format(base + idx)
+def bgcolor(idx, deep_color=False):
+	if deep_color:
+		idx = ((idx & 0xf) << 4) | ((idx & 0xf0) >> 4)
+		# This add 128 and mod 256 is important, because it ensures double-digits such as 00 remain different colors.
+		return '\x1b[48;5;{0}m'.format((idx + 128) % 256)
+	else:
 		idx = (idx & 0xf)
 		# 100 is bright background; 40 is dull background.
 		if idx < 0x8:
@@ -115,8 +122,16 @@ def hash_to_pic(hash, only_ever_one_line=False, represent_as_hex=False):
 			base = 100
 			idx = idx - 0x8
 		return '\x1b[{0}m'.format(base + idx)
-	bold = '\x1b[1m'
-	reset = '\x1b[0m'
+BOLD = '\x1b[1m'
+RESET = '\x1b[0m'
+
+def hash_to_pic(hash, only_ever_one_line=False, represent_as_hex=False, deep_color=False, _underlying_fgcolor=fgcolor, _underlying_bgcolor=bgcolor):
+	def fgcolor(idx):
+		return _underlying_fgcolor(idx, deep_color)
+	def bgcolor(idx):
+		return _underlying_bgcolor(idx, deep_color)
+
+	bytes = parse_hex(hash)
 	characters = list('0123456789abcdef') if represent_as_hex else [
 		'▚',
 		'▞',
@@ -147,7 +162,7 @@ def hash_to_pic(hash, only_ever_one_line=False, represent_as_hex=False):
 	else:
 		pixels_per_row, num_rows = pairs[last_byte % len(pairs)]
 	while output_chunks:
-		yield bold + ''.join(output_chunks[:pixels_per_row]) + reset
+		yield BOLD + ''.join(output_chunks[:pixels_per_row]) + RESET
 		del output_chunks[:pixels_per_row]
 
 if __name__ == '__main__':
@@ -196,18 +211,34 @@ if __name__ == '__main__':
 		assert extract_hash_from_line('#!/usr/bin/python\n')[0] is None
 
 		# Protip: Use vis -co to generate these.
-		(line,) = hash_to_pic('78', represent_as_hex=True)
+		(line,) = hash_to_pic('78', represent_as_hex=True, deep_color=False)
 		assert line == '\033[1m\033[37m\033[100m78\033[0m', repr(line)
-		(line,) = hash_to_pic('7f', represent_as_hex=True)
+		(line,) = hash_to_pic('7f', represent_as_hex=True, deep_color=False)
 		assert line == '\033[1m\033[37m\033[107m7f\033[0m', repr(line)
-		assert list(hash_to_pic('aebece')) != list(hash_to_pic('deeefe')), (list(hash_to_pic('aebece')), list(hash_to_pic('deeefe')))
-		assert list(hash_to_pic('eaebec')) != list(hash_to_pic('edeeef')), (list(hash_to_pic('eaebec')), list(hash_to_pic('edeeef')))
+		assert list(hash_to_pic('aebece', deep_color=False)) != list(hash_to_pic('deeefe', deep_color=False)), (list(hash_to_pic('aebece', deep_color=False)), list(hash_to_pic('deeefe', deep_color=False)))
+		assert list(hash_to_pic('eaebec', deep_color=False)) != list(hash_to_pic('edeeef', deep_color=False)), (list(hash_to_pic('eaebec', deep_color=False)), list(hash_to_pic('edeeef', deep_color=False)))
 		sys.exit(0)
+
+	use_256color = os.getenv('TERM') == 'xterm-256color'
 
 	import argparse
 	parser = argparse.ArgumentParser(description="Visualize hexadecimal input (hashes, UUIDs, etc.) as an arrangement of color blocks.")
 	parser.add_argument('--one-line', '--oneline', action='store_true', help="Unconditionally produce a rectangle 1 character tall. The default is to choose a pair of width and height based upon one of the bytes of the input.")
+	parser.add_argument('--color-test', '--colortest', action='store_true', help="Print the 16-color, 256-color foreground, and 256-color background color palettes, then exit.")
 	options, args = parser.parse_known_args()
+
+	if options.color_test:
+		for x in range(16):
+			print fgcolor(x, deep_color=False),
+			print bgcolor(x, deep_color=False),
+		else:
+			print
+		for x in range(256):
+			sys.stdout.write(fgcolor(x, deep_color=True) + bgcolor(x, deep_color=True) + '%02x' % (x,))
+		else:
+			print RESET
+		import sys
+		sys.exit(0)
 
 	import fileinput
 	for input_line in fileinput.input(args):
@@ -215,5 +246,5 @@ if __name__ == '__main__':
 
 		hash, is_hex = extract_hash_from_line(input_line)
 		if hash:
-			for output_line in hash_to_pic(hash, only_ever_one_line=options.one_line, represent_as_hex=is_hex):
+			for output_line in hash_to_pic(hash, only_ever_one_line=options.one_line, represent_as_hex=is_hex, deep_color=use_256color):
 				print output_line

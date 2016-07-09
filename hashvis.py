@@ -43,8 +43,7 @@ def except_one(pairs):
 			yield pair
 
 MD5_exp = re.compile(r'^MD5 \(.*\) = ([0-9a-fA-f]+)')
-RSA_exp = re.compile(r'^RSA key fingerprint is (?:MD5:)?([:0-9a-fA-f]+)\.')
-ECDSA_exp = re.compile(r'^ECDSA key fingerprint is SHA256:([+/0-9a-zA-Z]+)\.')
+fingerprint_exp = re.compile(r'^(?:R|ECD)SA key fingerprint is (?:(?:MD5:)?(?P<hex>[:0-9a-fA-f]+)|SHA256:(?P<base64>[+/0-9a-zA-Z]+))\.')
 more_base64_padding_than_anybody_should_ever_need = '=' * 64
 
 def extract_hash_from_line(input_line):
@@ -55,20 +54,19 @@ def extract_hash_from_line(input_line):
 			return match.group(1), True
 		else:
 			return '', False
-	elif input_line[:1] == 'R':
-		match = RSA_exp.match(input_line)
+	elif input_line[:1] in 'RE':
+		match = fingerprint_exp.match(input_line)
 		if match:
-			return match.group(1), True
-		else:
+			hex = match.group('hex')
+			if hex:
+				return hex, True
+			b64str = match.group('base64')
+			if b64str:
+				# Pacify the base64 module, which wants *some* padding (at least sometimes) but doesn't care how much.
+				b64str += more_base64_padding_than_anybody_should_ever_need
+				# Re-encode to hex for processing downstream. Arguably a refactoring opportunity…
+				return binascii.b2a_hex(base64.b64decode(b64str)), False
 			return '', False
-	elif input_line[:1] == 'E':
-		match = ECDSA_exp.match(input_line)
-		if match:
-			b64str = match.group(1)
-			# Pacify the base64 module, which wants *some* padding (at least sometimes) but doesn't care how much.
-			b64str += more_base64_padding_than_anybody_should_ever_need
-			# Re-encode to hex for processing downstream. Arguably a refactoring opportunity…
-			return binascii.b2a_hex(base64.b64decode(b64str)), False
 
 	if input_line:
 		try:
@@ -177,6 +175,9 @@ if __name__ == '__main__':
 		# Also from https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Authentication_Keys :
 		assert extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.\n') == ('2cf162318aeb098415b1550fce3387bfe663cb10879556093015457ab5423fb9', False), extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.\n')
 		assert extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.') == ('2cf162318aeb098415b1550fce3387bfe663cb10879556093015457ab5423fb9', False), extract_hash_from_line('ECDSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.')
+		# Mix and match RSA and ECDSA with MD5 and SHA256:
+		assert extract_hash_from_line('ECDSA key fingerprint is MD5:10:4a:ec:d2:f1:38:f7:ea:0a:a0:0f:17:57:ea:a6:16.') == ('10:4a:ec:d2:f1:38:f7:ea:0a:a0:0f:17:57:ea:a6:16', True)
+		assert extract_hash_from_line('RSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.\n') == ('2cf162318aeb098415b1550fce3387bfe663cb10879556093015457ab5423fb9', False), extract_hash_from_line('RSA key fingerprint is SHA256:LPFiMYrrCYQVsVUPzjOHv+ZjyxCHlVYJMBVFerVCP7k.\n')
 		#UUID
 		assert extract_hash_from_line('E6CD379E-12CD-4E00-A83A-B06E74CF03B8') == ('E6CD379E12CD4E00A83AB06E74CF03B8', True), extract_hash_from_line('E6CD379E-12CD-4E00-A83A-B06E74CF03B8')
 		assert extract_hash_from_line('e6cd379e-12cd-4e00-a83a-b06e74cf03b8') == ('e6cd379e12cd4e00a83ab06e74cf03b8', True), extract_hash_from_line('e6cd379e-12cd-4e00-a83a-b06e74cf03b8')

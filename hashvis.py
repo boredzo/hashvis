@@ -142,6 +142,10 @@ def hash_to_pic(hash, only_ever_one_line=False, represent_as_hex=False, deep_col
 		'▞',
 		'▀',
 		'▌',
+		'Δ', #Theoretically should've been ▵ but that one may be too wide in some terminals/fonts.
+		'▹',
+		'•',
+		'φ',
 	]
 	if not only_ever_one_line:
 		pairs = list((w, h) for (w, h) in except_one(factors(len(hash) / 2)) if w >= h)

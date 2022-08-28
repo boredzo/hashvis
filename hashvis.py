@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 """hashvis by Peter Hosey
@@ -21,7 +21,6 @@ import base64
 import binascii
 
 import cmath as math
-range = xrange
 
 def factors(n):
 	"Yield every pair of factors of n (x,y where n/x == y and n/y == x), except for (1,n) and (n,1)."
@@ -240,22 +239,22 @@ if __name__ == '__main__':
 
 	if options.color_test:
 		for x in range(16):
-			print fgcolor(x, deep_color=False),
-			print bgcolor(x, deep_color=False),
+			print(fgcolor(x, deep_color=False), end=' ')
+			print(bgcolor(x, deep_color=False), end=' ')
 		else:
-			print
+			print()
 		for x in range(256):
 			sys.stdout.write(fgcolor(x, deep_color=True) + bgcolor(x, deep_color=True) + '%02x' % (x,))
 		else:
-			print RESET
+			print(RESET)
 		import sys
 		sys.exit(0)
 
 	import fileinput
 	for input_line in fileinput.input(args):
-		print input_line.rstrip('\n')
+		print(input_line.rstrip('\n'))
 
 		hash, is_hex = extract_hash_from_line(input_line)
 		if hash:
 			for output_line in hash_to_pic(hash, only_ever_one_line=options.one_line, represent_as_hex=is_hex, deep_color=use_256color):
-				print output_line
+				print(output_line)

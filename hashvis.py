@@ -234,6 +234,7 @@ if __name__ == '__main__':
 	import argparse
 	parser = argparse.ArgumentParser(description="Visualize hexadecimal input (hashes, UUIDs, etc.) as an arrangement of color blocks.")
 	parser.add_argument('--one-line', '--oneline', action='store_true', help="Unconditionally produce a rectangle 1 character tall. The default is to choose a pair of width and height based upon one of the bytes of the input.")
+	parser.add_argument('--no-hex', dest='show_hex', action='store_false', default=True, help="Use arrangements of blocks to represent the hexadecimal digits. The default is to pass the hex digits through directly. Note: Requires a UTF-8 terminal.")
 	parser.add_argument('--color-test', '--colortest', action='store_true', help="Print the 16-color, 256-color foreground, and 256-color background color palettes, then exit.")
 	options, args = parser.parse_known_args()
 
@@ -256,5 +257,5 @@ if __name__ == '__main__':
 
 		hash, is_hex = extract_hash_from_line(input_line)
 		if hash:
-			for output_line in hash_to_pic(hash, only_ever_one_line=options.one_line, represent_as_hex=is_hex, deep_color=use_256color):
+			for output_line in hash_to_pic(hash, only_ever_one_line=options.one_line, represent_as_hex=(options.show_hex and is_hex), deep_color=use_256color):
 				print(output_line)

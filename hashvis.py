@@ -156,10 +156,10 @@ def hash_to_pic(hash, only_ever_one_line=False, represent_as_hex=False, deep_col
 		def find_character(b):
 			character_idx = b % len(characters)
 			return characters[character_idx]
-		if not represent_as_hex:
-			output_chunks.append(fgcolor(b) + bgcolor(b) + find_character(b))
-		else:
-			output_chunks.append(fgcolor(b) + bgcolor(b) + find_character(b >> 4) + find_character(b & 0xf))
+		output_chunks.append(fgcolor(b) + bgcolor(b)
+			+ find_character(b >> 4)
+			+ find_character(b & 0xf)
+		)
 		last_byte = b
 
 	if only_ever_one_line:

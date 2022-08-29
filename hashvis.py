@@ -170,6 +170,7 @@ def hash_to_pic(hash, only_ever_one_line=False, represent_as_hex=False, deep_col
 		pixels_per_row, num_rows = len(hash) / 2, 1
 	else:
 		pixels_per_row, num_rows = pairs[last_byte % len(pairs)]
+	pixels_per_row = int(pixels_per_row)
 	while output_chunks:
 		yield BOLD + ''.join(output_chunks[:pixels_per_row]) + RESET
 		del output_chunks[:pixels_per_row]
